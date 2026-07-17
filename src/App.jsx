@@ -274,6 +274,23 @@ const rowToTile = (r) => ({ id: r.id, text: r.content, theme: r.theme, author: r
 // Postgres unique-violation code (duplicate tile text / double vote)
 const DUPLICATE = "23505";
 
+// Mix two hex colors: t = 0 → a, t = 1 → b.
+function mixHex(a, b, t) {
+  const pa = [1, 3, 5].map((i) => parseInt(a.slice(i, i + 2), 16));
+  const pb = [1, 3, 5].map((i) => parseInt(b.slice(i, i + 2), 16));
+  return (
+    "#" +
+    pa
+      .map((v, i) => Math.round(v + (pb[i] - v) * t).toString(16).padStart(2, "0"))
+      .join("")
+  );
+}
+
+// Heatmap: cold (white) → hot (warm orange) as a tile gathers votes.
+const HEAT_HOT = "#FFB03B";
+const heatColor = (count, max) =>
+  max === 0 ? T.card : mixHex(T.card, HEAT_HOT, count / max);
+
 // Clipboard with legacy fallback; returns true when the text made it across.
 async function copyText(text) {
   try {
@@ -456,10 +473,6 @@ export default function AlexNextMove() {
   const addTile = async () => {
     const text = newTile.trim();
     if (!text || savingTile || !requireSave()) return;
-    if (text.length > 90) {
-      flash("Keep predictions under 90 characters.");
-      return;
-    }
     setSavingTile(true);
     try {
       // The DB's unique index on tile content makes duplicates and
@@ -633,6 +646,10 @@ export default function AlexNextMove() {
   }
 
   const totalVotes = Object.values(votes).reduce((s, v) => s + (v ? v.length : 0), 0);
+  const maxVotes = tiles.reduce((m, t) => Math.max(m, votes[t.id]?.length || 0), 0);
+  const rankedTiles = [...tiles].sort(
+    (a, b) => (votes[b.id]?.length || 0) - (votes[a.id]?.length || 0)
+  );
 
   return (
     <div style={styles.page}>
@@ -706,7 +723,7 @@ export default function AlexNextMove() {
 
             <div style={styles.court}>
               <div style={styles.grid}>
-                {tiles.map((tile) => {
+                {rankedTiles.map((tile) => {
                   const v = votes[tile.id] || [];
                   const mine = v.includes(name);
                   const th = tileTheme(tile);
@@ -719,7 +736,8 @@ export default function AlexNextMove() {
                       title={v.length ? "Backed by: " + v.join(", ") : "No votes yet"}
                       style={{
                         ...styles.tile,
-                        background: mine ? T.ball : T.card,
+                        background: heatColor(v.length, maxVotes),
+                        border: `2px solid ${mine ? T.ink : T.line}`,
                         opacity: busyTile === tile.id ? 0.7 : 1,
                         transform: busyTile === tile.id ? "scale(0.97)" : "none",
                       }}
@@ -754,7 +772,6 @@ export default function AlexNextMove() {
                       style={styles.tileInput}
                       value={newTile}
                       autoFocus
-                      maxLength={90}
                       placeholder="Your prediction…"
                       onChange={(e) => setNewTile(e.target.value)}
                       onKeyDown={(e) => {
@@ -820,7 +837,6 @@ export default function AlexNextMove() {
                 id="noteText"
                 style={{ ...styles.input, minHeight: 80, resize: "vertical", fontFamily: BODY }}
                 value={noteText}
-                maxLength={600}
                 placeholder="Gracias for everything, Alex…"
                 onChange={(e) => setNoteText(e.target.value)}
               />
