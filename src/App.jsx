@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useId } from "react";
 import { supabase } from "./supabase.js";
-import alexPhoto from "./alex.jpeg";
 
 // ---------- Design tokens ----------
 const T = {
@@ -565,51 +564,14 @@ export default function AlexNextMove() {
 
           <div
             style={{
-              display: "flex",
-              alignItems: "flex-start",
-              justifyContent: "center",
-              gap: 16,
               margin: "26px auto 8px",
-              animation: "fadeUp .5s .08s ease both",
+              width: 150,
+              height: 150,
+              animation: "bob 3.2s ease-in-out infinite",
             }}
           >
-            <div>
-              <img
-                src={alexPhoto}
-                alt="Alex"
-                width={132}
-                height={132}
-                style={{
-                  display: "block",
-                  borderRadius: "50%",
-                  border: `3px solid ${T.ink}`,
-                  objectFit: "cover",
-                  boxSizing: "border-box",
-                  transform: "rotate(-3deg)",
-                  boxShadow: "0 6px 0 rgba(14,34,64,0.12)",
-                }}
-              />
-              <div style={styles.spotCaption}>today</div>
-            </div>
-            <div
-              style={{
-                fontFamily: DISPLAY,
-                fontSize: 28,
-                color: T.court,
-                alignSelf: "center",
-                paddingBottom: 22,
-              }}
-              aria-hidden="true"
-            >
-              &rarr;
-            </div>
-            <div>
-              <div style={{ width: 132, height: 132, animation: "bob 3.2s ease-in-out infinite" }}>
-                <div key={spotKey} style={{ animation: "popIn .35s ease both" }}>
-                  <Memoji variant={spotKey} size={132} />
-                </div>
-              </div>
-              <div style={styles.spotCaption}>next?</div>
+            <div key={spotKey} style={{ animation: "popIn .35s ease both" }}>
+              <Memoji variant={spotKey} size={150} />
             </div>
           </div>
           <div key={spotKey + "-t"} style={{ minHeight: 52, animation: "fadeUp .35s ease both" }}>
@@ -995,15 +957,6 @@ const styles = {
     boxSizing: "border-box",
   },
   shell: { maxWidth: 980, margin: "0 auto" },
-  spotCaption: {
-    fontSize: 11,
-    fontWeight: 700,
-    letterSpacing: "0.12em",
-    textTransform: "uppercase",
-    color: T.muted,
-    textAlign: "center",
-    marginTop: 8,
-  },
   eyebrow: {
     fontSize: 11,
     fontWeight: 700,
