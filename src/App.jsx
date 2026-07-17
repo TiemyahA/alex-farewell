@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useId } from "react";
 import { supabase } from "./supabase.js";
+import alexPhoto from "./alex.jpeg";
 
 // ---------- Design tokens ----------
 const T = {
@@ -286,8 +287,8 @@ function mixHex(a, b, t) {
   );
 }
 
-// Heatmap: cold (white) → hot (warm orange) as a tile gathers votes.
-const HEAT_HOT = "#FFB03B";
+// Heatmap: cold (white) → hot (tennis-ball yellow) as a tile gathers votes.
+const HEAT_HOT = T.ball;
 const heatColor = (count, max) =>
   max === 0 ? T.card : mixHex(T.card, HEAT_HOT, count / max);
 
@@ -368,7 +369,7 @@ export default function AlexNextMove() {
     try {
       setLoadError(false);
       if (!supabase) {
-        // Env vars missing — render seeds read-only with a setup banner.
+        // Env vars missing: render seeds read-only with a setup banner.
         setCanSave(false);
         setTiles(SEED_TILES);
         setVotes({});
@@ -385,7 +386,7 @@ export default function AlexNextMove() {
 
       if (!tileRows || tileRows.length === 0) {
         // First ever visit: seed the board. ignoreDuplicates makes this safe
-        // even if several first visitors race — the fixed ids collide harmlessly.
+        // even if several first visitors race; the fixed ids collide harmlessly.
         await supabase.from("tiles").upsert(
           SEED_TILES.map((t) => ({ id: t.id, content: t.text, theme: t.theme, author: t.author })),
           { onConflict: "id", ignoreDuplicates: true }
@@ -433,7 +434,7 @@ export default function AlexNextMove() {
 
   const requireSave = () => {
     if (canSave === false) {
-      flash("The database isn't connected yet — add the Supabase env variables and redeploy.");
+      flash("The database isn't connected yet. Add the Supabase env variables and redeploy.");
       return false;
     }
     return true;
@@ -456,7 +457,7 @@ export default function AlexNextMove() {
         const { error } = await supabase
           .from("votes")
           .insert({ tile_id: tileId, voter: name });
-        // Duplicate = we already voted (e.g. from another tab) — treat as success.
+        // Duplicate = we already voted (e.g. from another tab), so treat as success.
         if (error && error.code !== DUPLICATE) throw error;
         setVotes((v) => ({
           ...v,
@@ -464,7 +465,7 @@ export default function AlexNextMove() {
         }));
       }
     } catch {
-      flash("That vote didn't save — check your connection and try again.");
+      flash("That vote didn't save. Check your connection and try again.");
     } finally {
       setBusyTile(null);
     }
@@ -476,16 +477,16 @@ export default function AlexNextMove() {
     setSavingTile(true);
     try {
       // The DB's unique index on tile content makes duplicates and
-      // simultaneous adds atomic — no read-modify-write races.
+      // simultaneous adds atomic, with no read-modify-write races.
       const tile = { id: uid("t"), text, author: name, theme: newTheme };
       const { error } = await supabase
         .from("tiles")
         .insert({ id: tile.id, content: tile.text, theme: tile.theme, author: tile.author });
       if (error) {
         if (error.code === DUPLICATE) {
-          flash("That prediction is already on the board — vote for it instead!");
+          flash("That prediction is already on the board, vote for it instead!");
         } else {
-          flash("Couldn't add the tile — check your connection and try again.");
+          flash("Couldn't add the tile. Check your connection and try again.");
         }
         return;
       }
@@ -514,7 +515,7 @@ export default function AlexNextMove() {
       setNoteText("");
       flash("Note added. Alex will love it.");
     } catch {
-      flash("Couldn't save the note — check your connection and try again.");
+      flash("Couldn't save the note. Check your connection and try again.");
     } finally {
       setSavingNote(false);
     }
@@ -525,17 +526,17 @@ export default function AlexNextMove() {
       (a, b) => (votes[b.id]?.length || 0) - (votes[a.id]?.length || 0)
     );
     return [
-      "ALEX: THE NEXT MOVE — final board",
+      "ALEX: THE NEXT MOVE (final board)",
       "",
       "Predictions (by votes):",
       ...ranked.map((t) => {
         const n = votes[t.id]?.length || 0;
-        return `  ${n} vote${n === 1 ? "" : "s"} — ${t.text} [${THEMES[tileTheme(t)].label}] (added by ${t.author})`;
+        return `  ${n} vote${n === 1 ? "" : "s"}: ${t.text} [${THEMES[tileTheme(t)].label}] (added by ${t.author})`;
       }),
       "",
       "Notes to Alex:",
       ...(notes.length
-        ? notes.map((n) => `  \u201c${n.text}\u201d — ${n.name}`)
+        ? notes.map((n) => `  \u201c${n.text}\u201d (${n.name})`)
         : ["  (none yet)"]),
     ].join("\n");
   };
@@ -564,14 +565,51 @@ export default function AlexNextMove() {
 
           <div
             style={{
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "center",
+              gap: 16,
               margin: "26px auto 8px",
-              width: 150,
-              height: 150,
-              animation: "bob 3.2s ease-in-out infinite",
+              animation: "fadeUp .5s .08s ease both",
             }}
           >
-            <div key={spotKey} style={{ animation: "popIn .35s ease both" }}>
-              <Memoji variant={spotKey} size={150} />
+            <div>
+              <img
+                src={alexPhoto}
+                alt="Alex"
+                width={132}
+                height={132}
+                style={{
+                  display: "block",
+                  borderRadius: "50%",
+                  border: `3px solid ${T.ink}`,
+                  objectFit: "cover",
+                  boxSizing: "border-box",
+                  transform: "rotate(-3deg)",
+                  boxShadow: "0 6px 0 rgba(14,34,64,0.12)",
+                }}
+              />
+              <div style={styles.spotCaption}>today</div>
+            </div>
+            <div
+              style={{
+                fontFamily: DISPLAY,
+                fontSize: 28,
+                color: T.court,
+                alignSelf: "center",
+                paddingBottom: 22,
+              }}
+              aria-hidden="true"
+            >
+              &rarr;
+            </div>
+            <div>
+              <div style={{ width: 132, height: 132, animation: "bob 3.2s ease-in-out infinite" }}>
+                <div key={spotKey} style={{ animation: "popIn .35s ease both" }}>
+                  <Memoji variant={spotKey} size={132} />
+                </div>
+              </div>
+              <div style={styles.spotCaption}>next?</div>
             </div>
           </div>
           <div key={spotKey + "-t"} style={{ minHeight: 52, animation: "fadeUp .35s ease both" }}>
@@ -609,7 +647,7 @@ export default function AlexNextMove() {
           </div>
 
           <p style={{ color: T.muted, lineHeight: 1.5, margin: "0 0 22px", animation: "fadeUp .5s .1s ease both" }}>
-            Alex always knew what would happen next. One last time — it's our serve.
+            Alex always knew what would happen next. One last time, it's our serve.
             Vote on what he does next, add your own prediction, and leave him a note.
           </p>
 
@@ -831,7 +869,7 @@ export default function AlexNextMove() {
           <>
             <div style={styles.noteForm}>
               <label style={styles.label} htmlFor="noteText">
-                Leave Alex a note — signed {"\u201C" + name + "\u201D"}
+                Leave Alex a note, signed {"\u201C" + name + "\u201D"}
               </label>
               <textarea
                 id="noteText"
@@ -851,14 +889,14 @@ export default function AlexNextMove() {
 
             {notes.length === 0 ? (
               <p style={{ color: T.muted, textAlign: "center", padding: 24 }}>
-                No notes yet — take the first serve.
+                No notes yet. Take the first serve.
               </p>
             ) : (
               <div style={styles.notesGrid}>
                 {notes.map((n) => (
                   <div key={n.id} style={styles.noteCard}>
                     <p style={{ margin: 0, lineHeight: 1.55, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{n.text}</p>
-                    <div style={styles.noteSig}>— {n.name}</div>
+                    <div style={styles.noteSig}>from {n.name}</div>
                   </div>
                 ))}
               </div>
@@ -883,8 +921,8 @@ export default function AlexNextMove() {
               </div>
               <p style={{ fontSize: 13, color: resultsCopied ? "#1E7A4F" : T.warn, margin: "0 0 10px", fontWeight: 600 }}>
                 {resultsCopied
-                  ? "Copied to your clipboard — and here's the text in case you need it:"
-                  : "Clipboard was blocked by the browser — select and copy the text below:"}
+                  ? "Copied to your clipboard. Here's the text in case you need it:"
+                  : "Clipboard was blocked by the browser. Select and copy the text below:"}
               </p>
               <textarea
                 readOnly
@@ -957,6 +995,15 @@ const styles = {
     boxSizing: "border-box",
   },
   shell: { maxWidth: 980, margin: "0 auto" },
+  spotCaption: {
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: "0.12em",
+    textTransform: "uppercase",
+    color: T.muted,
+    textAlign: "center",
+    marginTop: 8,
+  },
   eyebrow: {
     fontSize: 11,
     fontWeight: 700,

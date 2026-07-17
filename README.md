@@ -1,6 +1,6 @@
 # Alex: The Next Move
 
-Farewell prediction board — vote on what Alex does next, add your own
+Farewell prediction board: vote on what Alex does next, add your own
 prediction, and leave him a signed note. No login required for visitors:
 identity is just the name they type.
 
@@ -13,12 +13,12 @@ Stack: Vite + React frontend (deploys to Vercel), Supabase (Postgres) storage.
    contents of `supabase-setup.sql`, and click **Run**. This creates the
    `tiles`, `votes`, and `notes` tables with Row Level Security policies:
    visitors can read everything, add tiles/notes, and add/remove their own
-   votes — but can never edit or delete tiles or notes.
+   votes, but can never edit or delete tiles or notes.
 3. Go to **Settings → API** and copy two values:
    - **Project URL** (looks like `https://abcdefgh.supabase.co`)
    - **anon public** key (long string under "Project API keys")
 
-The anon key is designed to be public — it ships in the browser bundle.
+The anon key is designed to be public; it ships in the browser bundle.
 Never put the `service_role` key anywhere near this app.
 
 ## 2. Deploy to Vercel
